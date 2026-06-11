@@ -38,7 +38,11 @@ Matrix * network_update_B_W(Matrix * dw, Matrix * temp,  double l_rate);
 
 void network_train_step(Network * n, Matrix * input, Matrix * goal, double l_rate);
 
+void network_save(Network * n, const char * filename);
 
+Network * network_load(const char * filename);
+
+void free_network(Network * n);
 
 
 

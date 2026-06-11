@@ -6,7 +6,6 @@
 
 
 int main(){
-    srand(time(NULL));
 
     Network * n = malloc(sizeof(Network));
     n->number_layers = 2;
@@ -40,7 +39,7 @@ int main(){
     goal[3] = create_matrix(1,1); goal[3]->data[0] = 0;
 
     printf("TRAINING\n");
-    for(int i = 0; i < 100000; i++){
+    for(int i = 0; i < 1000000; i++){
         for(int j = 0; j < 4; j++){
             network_train_step(n, input[j], goal[j], 0.1);
         }
@@ -49,14 +48,21 @@ int main(){
         }
     }
 
+    network_save(n,"xor_save.bin");
+    free_network(n);
+    Network * n2 = network_load("xor_save.bin");
+
+
     printf("PREDICT\n");
     for(int i = 0; i < 4; i++){
-        network_predict(n,input[i]);
-        printf("%lf\n",n->layers[1].output->data[0]);
+        network_predict(n2,input[i]);
+        printf("%lf\n",n2->layers[1].output->data[0]);
     }
 
-
-
-
+    for(int i = 0; i < 4; i++){
+        free_matrix(input[i]);
+        free_matrix(goal[i]);
+    }
+    return 0;
 
 }

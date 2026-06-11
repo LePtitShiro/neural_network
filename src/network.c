@@ -1,7 +1,10 @@
 #include "network.h"
 #include "function_matrix.h"
+#include <linux/limits.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void init_weights(Matrix * m, int e, int s)
 {
@@ -173,4 +176,76 @@ void network_train_step(Network * n, Matrix * input, Matrix * goal, double l_rat
     network_predict(n,input);
     network_backward(n,goal,input);
     network_update_weights(n,l_rate);
+}
+
+
+void network_save(Network * n, const char * path)
+{
+
+    FILE * file = fopen(path,"wb");
+    if(file == NULL){
+        perror("Error opening file1");
+        return;
+    }
+    fwrite(&n->number_layers,sizeof(int),1,file);
+
+    for(int i = 0 ; i < n->number_layers; i++){
+        Layer * layer = &n->layers[i];
+        fwrite(&layer->weights->rows,sizeof(int),1,file);
+        fwrite(&layer->weights->cols,sizeof(int),1,file);
+        fwrite(layer->weights->data,sizeof(double),layer->weights->rows*layer->weights->cols,file);
+
+        fwrite(&layer->bias->rows,sizeof(int),1,file);
+        fwrite(&layer->bias->cols,sizeof(int),1,file);
+        fwrite(layer->bias->data,sizeof(double),layer->bias->rows*layer->bias->cols,file);
+    }
+
+    fclose(file);
+}
+
+Network * network_load(const char * path)
+{
+    Network * n = malloc(sizeof(Network));
+    FILE * file = fopen(path,"rb");
+    if(file == NULL){
+        perror("Error opening file2");
+        free(n);
+        return NULL;
+    }
+
+    fread(&n->number_layers,sizeof(int),1,file);
+    n->layers = calloc(n->number_layers,sizeof(Layer));
+
+    for(int i = 0 ; i < n->number_layers; i++){
+        Layer * layer = &n->layers[i];
+
+        int rows, cols;
+        fread(&rows,sizeof(int),1,file);
+        fread(&cols,sizeof(int),1,file);
+        layer->weights = create_matrix(rows,cols);
+        fread(layer->weights->data,sizeof(double),rows*cols,file);
+
+        fread(&rows,sizeof(int),1,file);
+        fread(&cols,sizeof(int),1,file);
+        layer->bias = create_matrix(rows,cols);
+        fread(layer->bias->data,sizeof(double),rows*cols,file);
+    }
+
+    fclose(file);
+    return n;
+}
+
+
+void free_network(Network *n)
+{
+    for(int i = 0; i < n->number_layers; i++){
+        free_matrix(n->layers[i].bias);
+        free_matrix(n->layers[i].weights);
+        if(n->layers[i].output != NULL) free_matrix(n->layers[i].output);
+        if(n->layers[i].dw != NULL) free_matrix(n->layers[i].dw);
+        if(n->layers[i].db != NULL) free_matrix(n->layers[i].db);
+        if(n->layers[i].delta != NULL) free_matrix(n->layers[i].delta);
+    }
+    free(n->layers);
+    free(n);
 }
