@@ -58,15 +58,119 @@ void network_predict(Network *n, Matrix *input)
     for(int i = 0; i < n->number_layers; i++){
         Matrix * m_product = matrix_product(n->layers[i].weights,current_input);
         Matrix * m_add = matrix_add(m_product,n->layers[i].bias);
-        free(m_product);
+        free_matrix(m_product);
 
         Matrix * m_sigmoid = apply_sigmoid(m_add);
+        free_matrix(m_add);
+
         if(n->layers[i].output != NULL) free_matrix(n->layers[i].output);
 
         n->layers[i].output = m_sigmoid;
 
         current_input = m_sigmoid;
 
+
     }
 
+}
+
+
+void network_backward(Network *n, Matrix * goal, Matrix * input)
+{
+    int index_last_layer = n->number_layers-1;
+    Matrix * output_last_layer = n->layers[index_last_layer].output;
+    Matrix * m_BE = mse_derivate(output_last_layer,goal);
+    Matrix * m_D = apply_derivate_sigmoid(output_last_layer);
+    Matrix * delta = matrix_product_hadamard(m_D, m_BE);
+
+    free_matrix(m_BE);
+    free_matrix(m_D);
+
+    if(n->layers[index_last_layer].delta != NULL ) free_matrix(n->layers[index_last_layer].delta);
+    n->layers[index_last_layer].delta = delta;
+
+    int i = index_last_layer - 1;
+    for (int j = i; j >= 0 ; j--){
+        Matrix * weight_next_trans = matrix_trans(n->layers[j+1].weights);
+        Matrix * p_w = matrix_product(weight_next_trans, n->layers[j+1].delta);
+        Matrix * deriv_sigmoid = apply_derivate_sigmoid(n->layers[j].output);
+
+
+        if(n->layers[j].delta != NULL ) free_matrix(n->layers[j].delta);
+        n->layers[j].delta = matrix_product_hadamard(deriv_sigmoid, p_w);
+
+
+        free_matrix(weight_next_trans);
+        free_matrix(p_w);
+        free_matrix(deriv_sigmoid);
+
+    }
+
+    for(int k = index_last_layer; k >= 0 ; k--){
+        if(k > 0 ) {
+            if(n->layers[k].dw != NULL ) free_matrix(n->layers[k].dw);
+
+            Matrix * temp = matrix_trans(n->layers[(k-1)%n->number_layers].output);
+            n->layers[k].dw = matrix_product(n->layers[k].delta, temp);
+
+            free_matrix(temp);
+        }else{
+            if(n->layers[k].dw != NULL ) free_matrix(n->layers[k].dw);
+
+            Matrix * temp = matrix_trans(input);
+            n->layers[k].dw = matrix_product(n->layers[k].delta,temp);
+
+            free_matrix(temp);
+        }
+
+        if(n->layers[k].db != NULL ) free_matrix(n->layers[k].db);
+
+        n->layers[k].db = matrix_copy(n->layers[k].delta);
+
+    }
+
+}
+
+Matrix * apply_derivate_sigmoid(Matrix *m)
+{
+    if(m == NULL) return NULL;
+
+    Matrix * new_matrix = create_matrix(m->rows,m->cols);
+    if(new_matrix == NULL) return NULL;
+
+
+    for(int i = 0; i < new_matrix->rows; i++){
+        for(int j = 0; j <new_matrix->cols; j++){
+            int index = i*new_matrix->cols+j;
+            new_matrix->data[index] = derivate_sigmoid(m->data[index]);
+        }
+    }
+    return new_matrix;
+}
+
+
+void network_update_weights(Network * n, double l_rate)
+{
+    for(int i = 0; i < n->number_layers; i++){
+        n->layers[i].weights = network_update_B_W(n->layers[i].dw,n->layers[i].weights,i,l_rate);
+        n->layers[i].bias = network_update_B_W(n->layers[i].db,n->layers[i].bias,i,l_rate);
+    }
+}
+
+Matrix * network_update_B_W(Matrix * dw, Matrix * temp, int i,  double l_rate)
+{
+    Matrix * new_dw = matrix_scalar_multiply(dw, l_rate);
+    Matrix * new_matrix = matrix_sub(temp, new_dw);
+
+    if(temp != NULL) free_matrix(temp);
+    free_matrix(new_dw);
+
+    return new_matrix;
+}
+
+void network_train_step(Network * n, Matrix * input, Matrix * goal, double l_rate)
+{
+    network_predict(n,input);
+    network_backward(n,goal,input);
+    network_update_weights(n,l_rate);
 }
