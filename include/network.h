@@ -44,6 +44,7 @@ Network * network_load(const char * filename);
 
 void free_network(Network * n);
 
+Network * create_network(int number_layers, int * layer_sizes);
 
 
 #endif

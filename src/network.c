@@ -249,3 +249,21 @@ void free_network(Network *n)
     free(n->layers);
     free(n);
 }
+
+Network * create_network(int number_layers, int * layers_size)
+{
+    Network * n = malloc(sizeof(Network));
+    if(n == NULL) return NULL;
+
+    n->number_layers = number_layers-1;
+    n->layers = calloc(n->number_layers,sizeof(Layer));
+    if(n == NULL) { free(n); return NULL;}
+
+    for(int i = 0; i < n->number_layers; i++){
+        n->layers[i].weights = create_matrix(layers_size[i+1], layers_size[i]);
+        n->layers[i].bias = create_matrix(layers_size[i+1], 1);
+        init_weights(n->layers[i].weights, layers_size[i], layers_size[i+1]);
+        init_bias(n->layers[i].bias);
+    }
+    return n;
+}

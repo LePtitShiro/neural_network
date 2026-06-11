@@ -7,23 +7,9 @@
 
 int main(){
 
-    Network * n = malloc(sizeof(Network));
-    n->number_layers = 2;
-    n->layers = calloc(2,sizeof(Layer));
+    srand(time(NULL));
 
-    // layer 0
-
-    n->layers[0].weights = create_matrix(4,2);
-    n->layers[0].bias = create_matrix(4,1);
-    init_weights(n->layers[0].weights, 4, 1);
-    init_bias(n->layers[0].bias);
-
-    // layer 1
-
-    n->layers[1].weights = create_matrix(1, 4);
-    n->layers[1].bias = create_matrix(1,1);
-    init_weights(n->layers[1].weights,4,1);
-    init_bias(n->layers[1].bias);
+    Network * n = create_network(3,(int[]){2,4,1});
 
     Matrix * input[4];
     Matrix * goal[4];
@@ -44,7 +30,7 @@ int main(){
             network_train_step(n, input[j], goal[j], 0.1);
         }
         if (i % 1000 == 0) {
-            printf("%lf\n", mse_cost(n->layers[1].output,goal[3]));
+            printf("%lf\n", mse_cost(n->layers[n->number_layers - 1].output,goal[3]));
         }
     }
 
@@ -56,13 +42,17 @@ int main(){
     printf("PREDICT\n");
     for(int i = 0; i < 4; i++){
         network_predict(n2,input[i]);
-        printf("%lf\n",n2->layers[1].output->data[0]);
+        printf("%lf\n",n2->layers[n2->number_layers - 1].output->data[0]);
     }
 
     for(int i = 0; i < 4; i++){
         free_matrix(input[i]);
         free_matrix(goal[i]);
     }
+
+    free_network(n2);
+
     return 0;
+
 
 }
