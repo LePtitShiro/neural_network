@@ -210,6 +210,7 @@ Matrix * matrix_copy(Matrix * m)
 
 Matrix * matrix_scalar_multiply(Matrix* m1, double v)
 {
+    if(m1 == NULL){ perror("matrix is null (scalar_multiply)"); return NULL;}
     Matrix * new_matrix = create_matrix(m1->rows, m1->cols);
     for(int i = 0; i < m1->rows; i++){
         for(int j = 0; j < m1->cols; j++){

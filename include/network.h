@@ -34,7 +34,7 @@ Matrix * apply_derivate_sigmoid(Matrix * m);
 
 void network_update_weights(Network * n, double l_rate);
 
-Matrix * network_update_B_W(Matrix * dw, Matrix * temp, int i,  double l_rate);
+Matrix * network_update_B_W(Matrix * dw, Matrix * temp,  double l_rate);
 
 void network_train_step(Network * n, Matrix * input, Matrix * goal, double l_rate);
 

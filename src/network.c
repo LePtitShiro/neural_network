@@ -152,12 +152,12 @@ Matrix * apply_derivate_sigmoid(Matrix *m)
 void network_update_weights(Network * n, double l_rate)
 {
     for(int i = 0; i < n->number_layers; i++){
-        n->layers[i].weights = network_update_B_W(n->layers[i].dw,n->layers[i].weights,i,l_rate);
-        n->layers[i].bias = network_update_B_W(n->layers[i].db,n->layers[i].bias,i,l_rate);
+        n->layers[i].weights = network_update_B_W(n->layers[i].dw,n->layers[i].weights,l_rate);
+        n->layers[i].bias = network_update_B_W(n->layers[i].db,n->layers[i].bias,l_rate);
     }
 }
 
-Matrix * network_update_B_W(Matrix * dw, Matrix * temp, int i,  double l_rate)
+Matrix * network_update_B_W(Matrix * dw, Matrix * temp,  double l_rate)
 {
     Matrix * new_dw = matrix_scalar_multiply(dw, l_rate);
     Matrix * new_matrix = matrix_sub(temp, new_dw);

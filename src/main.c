@@ -1,44 +1,62 @@
 #include "function_matrix.h"
+#include "network.h"
 #include <time.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 
 int main(){
     srand(time(NULL));
 
-    Matrix * A = create_matrix(2, 3);
-    Matrix * B = create_matrix(3, 2);
+    Network * n = malloc(sizeof(Network));
+    n->number_layers = 2;
+    n->layers = calloc(2,sizeof(Layer));
 
-    // Remplissage de la matrice A (2x3)
-    // [ 1, 2, 3 ]
-    // [ 4, 5, 6 ]
-    A->data[0] = 1; A->data[1] = 2; A->data[2] = 3;
-    A->data[3] = 4; A->data[4] = 5; A->data[5] = 6;
-    print_matrix(A);
-    // Remplissage de la matrice B (3x2)
-    // [ 7,  8 ]
-    // [ 9,  10]
-    // [ 11, 12]
-    B->data[0] = 7;  B->data[1] = 8;
-    B->data[2] = 9;  B->data[3] = 10;
-    B->data[4] = 11; B->data[5] = 12;
-    print_matrix(B);
+    // layer 0
 
-    Matrix * C = matrix_product(A, B);
+    n->layers[0].weights = create_matrix(4,2);
+    n->layers[0].bias = create_matrix(4,1);
+    init_weights(n->layers[0].weights, 4, 1);
+    init_bias(n->layers[0].bias);
 
-    print_matrix(C);
+    // layer 1
 
-    Matrix * D = create_matrix(2,2);
-    D->data[0] = 1; D->data[1] = 1;
-    D->data[2] = 1; D->data[3] = 1;
+    n->layers[1].weights = create_matrix(1, 4);
+    n->layers[1].bias = create_matrix(1,1);
+    init_weights(n->layers[1].weights,4,1);
+    init_bias(n->layers[1].bias);
 
-    Matrix * E = matrix_add(C, D);
-    print_matrix(E);
+    Matrix * input[4];
+    Matrix * goal[4];
+
+    input[0] = create_matrix(2,1); input[0]->data[0] = 0; input[0]->data[1] = 0;
+    input[1] = create_matrix(2,1); input[1]->data[0] = 0; input[1]->data[1] = 1;
+    input[2] = create_matrix(2,1); input[2]->data[0] = 1; input[2]->data[1] = 0;
+    input[3] = create_matrix(2,1); input[3]->data[0] = 1; input[3]->data[1] = 1;
+
+    goal[0] = create_matrix(1,1); goal[0]->data[0] = 0;
+    goal[1] = create_matrix(1,1); goal[1]->data[0] = 1;
+    goal[2] = create_matrix(1,1); goal[2]->data[0] = 1;
+    goal[3] = create_matrix(1,1); goal[3]->data[0] = 0;
+
+    printf("TRAINING\n");
+    for(int i = 0; i < 100000; i++){
+        for(int j = 0; j < 4; j++){
+            network_train_step(n, input[j], goal[j], 0.1);
+        }
+        if (i % 1000 == 0) {
+            printf("%lf\n", mse_cost(n->layers[1].output,goal[3]));
+        }
+    }
+
+    printf("PREDICT\n");
+    for(int i = 0; i < 4; i++){
+        network_predict(n,input[i]);
+        printf("%lf\n",n->layers[1].output->data[0]);
+    }
 
 
-    free_matrix(A);
-    free_matrix(B);
-    free_matrix(C);
-    free_matrix(D);
-    free_matrix(E);
+
+
+
 }
